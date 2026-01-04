@@ -5,28 +5,17 @@ import { MongoClient } from 'mongodb'
 
 export const runtime = 'nodejs'
 
-// רק משתמש בשם "admin" יכול לגשת
-const SUPER_ADMIN_USERNAME = 'admin'
-
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     
     console.log('📦 Backup request from:', session?.user?.name)
     
-    // בדוק שזה המשתמש "admin"
-    if (!session) {
-      console.error('❌ No session found')
+    // בדיקת הרשאות: מוודאים שיש סשן ושיהיה תפקיד admin
+    if (!session || session.user.role !== 'admin') {
+      console.error(`❌ Unauthorized access attempt by: ${session?.user?.name || 'Unknown'}`)
       return NextResponse.json(
-        { success: false, error: 'לא מחובר - נא להתחבר תחילה' },
-        { status: 401 }
-      )
-    }
-    
-    if (session.user.name !== SUPER_ADMIN_USERNAME) {
-      console.error(`❌ Unauthorized user: ${session.user.name}`)
-      return NextResponse.json(
-        { success: false, error: `רק המשתמש "${SUPER_ADMIN_USERNAME}" יכול להוריד גיבויים` },
+        { success: false, error: 'אין הרשאה - רק מנהלים יכולים להוריד גיבוי' },
         { status: 403 }
       )
     }
